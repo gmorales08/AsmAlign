@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Added by gmorales08
+asmAlign
+*.asm
+*.z80
+*.s
