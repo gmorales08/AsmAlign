@@ -57,3 +57,4 @@ asmAlign
 *.z80
 *.s
 *_old
+*_align
