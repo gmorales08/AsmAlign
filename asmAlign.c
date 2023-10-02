@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
     FILE *fileAlign;
     char *fileName;
     char fileNameAlign[80];
+    char fileNameOld[80];
 
     if (argc < 2) {
         printf("Error: You must specify a file\n");
@@ -73,8 +74,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("File: %s. Parameters used: i=%d s=%d u=%d\n", fileName,
-            instructionSize, separation, upperCase);
+    printf("File: %s. Parameters used: i=%d s=%d u=%d t=%d\n", fileName,
+            instructionSize, separation, upperCase, trim);
 
     /* Create the new file */
     strcpy(fileNameAlign, fileName);
@@ -143,10 +144,20 @@ int main(int argc, char *argv[]) {
             k--;
         }
     } while (!feof(file));
+
     fclose(file);
     fclose(fileAlign);
+    /* Rename the file */
+    strcpy(fileNameOld, fileName);
+    strcat(fileNameOld, "_old");
+    if (rename(fileName, fileNameOld) == 1) {
+        perror(fileName);
+    }
+    if (rename(fileNameAlign, fileName) == 0) {
+        printf("A backup file %s with the original content has been created\n", 
+               fileNameOld);
+    }
     printf("%d lines readed from %s\n", i, fileName);
-    /*printf("A backup file %s has been created\n", fileNameOld);*/
 
     return 0;
 }
