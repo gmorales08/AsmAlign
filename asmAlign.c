@@ -30,19 +30,18 @@ int main(int argc, char *argv[]) {
     if (argc < 2) {
         printf("Error: You must specify a file\n");
         return 1;
-    } else {
+    } else if (strcmp(argv[1], "--usage")) {
         fileName = argv[1];
+        /* Open the original file */
+        file = fopen(fileName, "r");
+        if (!file) {
+            perror(fileName);
+            return 1;
+        }
     }
-
-    /* Open the original file */
-    file = fopen(fileName, "r");
-    if (!file) {
-        perror(fileName);
-        return 1;
-    }
-    
+  
     /* Show usage */
-    if (argc > 5) {
+    if (argc > 5 || !strcmp(argv[1], "--usage")) {
         printf("Usage: asmAlign [options] <input file>\n");
         printf("  -i<number>  (The length of the longest instruction)\n");
         printf("              (The default number is 4. Min. 1, Max. 9.)\n");
@@ -50,6 +49,10 @@ int main(int argc, char *argv[]) {
         printf("              (The default number is 1. Min. 1, Max. 9.) \n");
         printf("  -u          (Write the instructions in upper case)\n");
         printf("  -t          (Remove white spaces between the parameters)\n");
+        printf("  --usage     (Print usage information)\n");
+        printf("\n");
+        printf("Prebuilt options by architecture:\n");
+        printf("  --z80       (-i4 -s1)\n");
         return 1;
     }
 
@@ -60,7 +63,7 @@ int main(int argc, char *argv[]) {
                 case 'i':
                     value = argv[i][2] - '0';
                     if (value < 1 || value > 9) {
-                        value = 5;
+                        value = 4;
                     }
                     instructionSize = value;
                     break;
@@ -76,6 +79,12 @@ int main(int argc, char *argv[]) {
                     break;
                 case 't':
                     trim = 1;
+                    break;
+                case '-':
+                    if (!strcmp(argv[i], "--z80")) {
+                        instructionSize = 4;
+                        separation = 1;
+                    }
                     break;
                 default:
                     printf("Error: unrecognized command-line option -%c\n",
