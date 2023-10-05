@@ -2,24 +2,31 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LSIZE 80  /* Maximum Line Size */
+#define FNSIZE 80 /* Maximum File Name Size */
+
 int main(int argc, char *argv[]) {
     int  i;
-    int  j;
-    int  k;
-    int  value;
+    int  lines;               /* Count the lines readed */
+    int  cIndex;              /* Index of character in a line */
+    int  lSize;               /* Size of the line */
     int  instructionSize = 4; /* -i */
     int  separation      = 1; /* -s */
     int  upperCase       = 0; /* -u */
-    int  trim            = 0;
-    int  iReading;
-    int  iReaded;             /* Boolean values for use while writting in */
-    int  sReaded;             /* the new file */
+    int  trim            = 0; /* -t */
+    int  iReading;            /* Boolean values for use while writting in */
+    int  iReaded;             /* the new file */
+    int  sReaded;
+    int  iRemaining;          /* Chars remaining to complete the instruction */ 
+    char value;               /* For read characters in args and file */
     FILE *file;
     FILE *fileAlign;
     char *fileName;
-    char fileNameAlign[80];
-    char fileNameOld[80];
+    char fileNameAlign[FNSIZE];
+    char fileNameOld[FNSIZE];
+    char line[LSIZE + 1];
 
+    /* Check if file name is provided */
     if (argc < 2) {
         printf("Error: You must specify a file\n");
         return 1;
@@ -27,12 +34,14 @@ int main(int argc, char *argv[]) {
         fileName = argv[1];
     }
 
+    /* Open the original file */
     file = fopen(fileName, "r");
     if (!file) {
         perror(fileName);
         return 1;
     }
-
+    
+    /* Show usage */
     if (argc > 5) {
         printf("Usage: asmAlign [options] <input file>\n");
         printf("  -i<number>  (The length of the longest instruction)\n");
@@ -44,6 +53,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    /* Read the arguments */
     for (i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             switch (argv[i][1]) {
@@ -73,7 +83,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
     printf("File: %s. Parameters used: i=%d s=%d u=%d t=%d\n", fileName,
             instructionSize, separation, upperCase, trim);
 
@@ -87,62 +96,85 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    i        = 0;
-    k        = instructionSize;
-    iReaded  = 0;
-    iReading = 0;
-    sReaded  = 0;
-    printf("Reading the file...\n");
+    /* Read the file and make the changes */
+    lines      = 0;
+    iRemaining = instructionSize;
+    iReaded    = 0;
+    iReading   = 0;
+    sReaded    = 0;
+    printf("Reading the file...\n"); 
     do {
-        value = fgetc(file);
-        if ((char) value == '\n') {
-            i++;
-            k        = instructionSize;
-            iReaded  = 0;
-            iReading = 0;
-            sReaded  = 0;
-            fputc((char) value, fileAlign);
-        } else if ((char) value == ' ' || (char) value == '\t') {
-            if (iReading == 1) {
-                iReaded  = 1;
-                iReading = 0;
-                for (j = 0; j < separation; j++) {
-                    fputc(' ', fileAlign);
-                }
-                sReaded = 1;
-            } else if (iReaded == 1 && sReaded == 0) {
-                for (j = 0; j < separation; j++) {
-                    fputc(' ', fileAlign);
-                }
-                sReaded = 1;
-            } else if (iReaded == 1 && sReaded == 1 && k <= 0 && trim == 0) {
-                if (iReading == 1) {
-                    fputc(' ', fileAlign);
-                }
-            } else if (iReaded == 1 && sReaded == 1 && k <= 0 && trim == 1) {
-                /* Remove white spaces */
-            } else if (k <= 0 || (iReaded == 0 && sReaded == 0)) {
-                fputc(value, fileAlign);
-            }
-        } else if (value != EOF){
-            /* Instruction read */
-            if (iReaded == 0) {
-                iReading = 1;
-                if (upperCase) {
-                    if ((char) value >= 'a' && (char) value <= 'z') {
-                        value = value - 32;
+        if (fgets(line, LSIZE + 1, file)) { /* +1 because line contains \n */
+            lSize = strlen(line);
+            /* if the line ends with ':' its a label and is printed directly */
+            if (line[lSize - 2] != ':') {
+                /* Read the characters of the line */
+                cIndex = 0;
+                do {
+                    value = line[cIndex];
+                    if (value == '\n') {
+                        iRemaining = instructionSize;        
+                        iReaded    = 0;
+                        iReading   = 0;
+                        sReaded    = 0;
+                        fputc(value, fileAlign);
+                    } else if (value == ' ' || value == '\t') {
+                        /* Reading the first space of the separation */
+                        if (iReading == 1) {
+                            iReaded  = 1;
+                            iReading = 0;
+                            for (i = 0; i < separation; i++) {
+                                fputc(' ', fileAlign);
+                            }
+                            sReaded = 1;
+                        /* Reading the first space of the separation */
+                        } else if (iReaded == 1 && sReaded == 0) {
+                            for (i = 0; i < separation; i++) {
+                                fputc(' ', fileAlign);
+                            }
+                            sReaded = 1;
+                        /* Reading the args and not trimming spaces */
+                        } else if (iReaded == 1 && sReaded == 1 && 
+                                   iRemaining <= 0 && trim == 0) {
+                            if (iReading == 1) {
+                                fputc(' ', fileAlign);
+                            }
+                        /* Reading the args and trimming spaces */
+                        } else if (iReaded == 1 && sReaded == 1 &&
+                                   iRemaining <= 0 && trim == 1) {
+                            /* Remove white spaces */
+                        /* Reading the space before instruction */
+                        } else if (iRemaining == instructionSize && 
+                                   iReaded == 0 && sReaded == 0) {
+                            fputc(value, fileAlign);
+                        }
+                    } else if (value != EOF) {
+                        /* Instruction read */
+                        if (iReaded == 0) {
+                            iReading = 1;
+                            if (upperCase) {
+                                if (value >= 'a' && value <= 'z') {
+                                    value = value - 32;
+                                }
+                            }
+                        /* Parameters read */
+                        } else if (sReaded == 1) {
+                            while (iRemaining > 0) {
+                                fputc(' ', fileAlign);
+                                iRemaining--;
+                            }
+                        }
+                        fputc(value, fileAlign);
+                        iRemaining--;
                     }
-                }
-            /* Parameters read */
-            } else if (sReaded == 1){
-                while (k > 0) {
-                    fputc(' ', fileAlign);
-                    k--;
-                }
-            }
-            fputc((char) value, fileAlign);
-            k--;
+                    cIndex++;
+                } while ((int) value != EOF && cIndex < lSize);
+            /* The line readed is a label */
+            } else {
+                fputs(line, fileAlign);
+            } 
         }
+        lines++;
     } while (!feof(file));
 
     fclose(file);
@@ -154,10 +186,10 @@ int main(int argc, char *argv[]) {
         perror(fileName);
     }
     if (rename(fileNameAlign, fileName) == 0) {
-        printf("A backup file %s with the original content has been created\n", 
+        printf("A backup file %s with the original content has been created\n",
                fileNameOld);
     }
-    printf("%d lines readed from %s\n", i, fileName);
-
+    printf("%d lines readed from %s\n", lines, fileName); 
+    
     return 0;
 }
