@@ -5,7 +5,7 @@ CC           := gcc
 CCFLAGS      := -Wall -Wextra -pedantic -g -std=c90
 
 
-all : clean elf
+all : elf
 
 elf :
 	$(CC) $(CCFLAGS) $(PROGRAM).c -o $(PROGRAM)
