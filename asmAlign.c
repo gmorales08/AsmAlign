@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     int  iReading;            /* Boolean values for use while writting in */
     int  iReaded;             /* the new file */
     int  sReaded;
-    int  iRemaining;          /* Chars remaining to complete the instruction */ 
+    int  iRemaining;          /* Chars remaining to complete the instruction */
     char value;               /* For read characters in args and file */
     FILE *file;
     FILE *fileAlign;
@@ -30,7 +30,8 @@ int main(int argc, char *argv[]) {
     if (argc < 2) {
         printf("Error: You must specify a file\n");
         return 1;
-    } else if (strcmp(argv[1], "--usage")) {
+    } else if (strcmp(argv[1], "--usage") && strcmp(argv[1], "--info") &&
+               strcmp(argv[1], "--help")) {
         fileName = argv[1];
         /* Open the original file */
         file = fopen(fileName, "r");
@@ -39,20 +40,34 @@ int main(int argc, char *argv[]) {
             return 1;
         }
     }
-  
+
     /* Show usage */
-    if (argc > 5 || !strcmp(argv[1], "--usage")) {
-        printf("Usage: asmAlign [options] <input file>\n");
+    if (argc > 5 || !strcmp(argv[1], "--usage") ||
+        !strcmp(argv[1], "--info") || !strcmp(argv[1], "--help")) {
+        printf("USAGE:\n");
+        printf("  asmAlign [options] <input file>\n");
+        printf("\n");
+        printf("OPTIONS:\n");
         printf("  -i<number>  (The length of the longest instruction)\n");
         printf("              (The default number is 4. Min. 1, Max. 9.)\n");
         printf("  -s<number>  (Space between instruction and parameters)\n");
         printf("              (The default number is 1. Min. 1, Max. 9.) \n");
         printf("  -u          (Write the instructions in upper case)\n");
         printf("  -t          (Remove white spaces between the parameters)\n");
-        printf("  --usage     (Print usage information)\n");
         printf("\n");
-        printf("Prebuilt options by architecture:\n");
+        printf("  --usage     (Print usage information)\n");
+        printf("  --info      (Print usage information)\n");
+        printf("  --help      (Print usage information)\n");
+        printf("\n");
+        printf("  Prebuilt options by architecture:\n");
         printf("  --z80       (-i4 -s1)\n");
+        printf("\n");
+        printf("EXAMPLES:\n");
+        printf("  asmAlign test.asm\n");
+        printf("  asmAlign -i4 -s2 test.asm\n");
+        printf("  asmAlign -i3 -s1 -u -t test.asm\n");
+        printf("\n");
+
         return 1;
     }
 
@@ -111,7 +126,7 @@ int main(int argc, char *argv[]) {
     iReaded    = 0;
     iReading   = 0;
     sReaded    = 0;
-    printf("Reading the file...\n"); 
+    printf("Reading the file...\n");
     do {
         if (fgets(line, LSIZE + 1, file)) { /* +1 because line contains \n */
             lSize = strlen(line);
@@ -122,7 +137,7 @@ int main(int argc, char *argv[]) {
                 do {
                     value = line[cIndex];
                     if (value == '\n') {
-                        iRemaining = instructionSize;        
+                        iRemaining = instructionSize;
                         iReaded    = 0;
                         iReading   = 0;
                         sReaded    = 0;
@@ -143,7 +158,7 @@ int main(int argc, char *argv[]) {
                             }
                             sReaded = 1;
                         /* Reading the args and not trimming spaces */
-                        } else if (iReaded == 1 && sReaded == 1 && 
+                        } else if (iReaded == 1 && sReaded == 1 &&
                                    iRemaining <= 0 && trim == 0) {
                             if (iReading == 1) {
                                 fputc(' ', fileAlign);
@@ -153,7 +168,7 @@ int main(int argc, char *argv[]) {
                                    iRemaining <= 0 && trim == 1) {
                             /* Remove white spaces */
                         /* Reading the space before instruction */
-                        } else if (iRemaining == instructionSize && 
+                        } else if (iRemaining == instructionSize &&
                                    iReaded == 0 && sReaded == 0) {
                             fputc(value, fileAlign);
                         }
@@ -181,7 +196,7 @@ int main(int argc, char *argv[]) {
             /* The line readed is a label */
             } else {
                 fputs(line, fileAlign);
-            } 
+            }
         }
         lines++;
     } while (!feof(file));
@@ -198,7 +213,7 @@ int main(int argc, char *argv[]) {
         printf("A backup file %s with the original content has been created\n",
                fileNameOld);
     }
-    printf("%d lines readed from %s\n", lines, fileName); 
-    
+    printf("%d lines readed from %s\n", lines, fileName);
+
     return 0;
 }
